@@ -55,6 +55,7 @@ class CounterTest(TestCase):
         result = self.client.post('/counters/barfoo')
         self.assertEqual(result.status_code, status.HTTP_201_CREATED)
         base_value = result.get_json()['barfoo']
+        self.assertEqual(base_value, 0)
 
         for i in range(15):
             result = self.client.put('/counters/barfoo')
@@ -64,3 +65,35 @@ class CounterTest(TestCase):
         
         result = self.client.get('/counters/barfoo')
         self.assertEqual(result.status_code, status.HTTP_200_OK)
+        new_value = result.get_json()['barfoo']
+        self.assertEqual(base_value + 15, new_value)
+
+    def test_delete_a_counter(self):
+        """It should delete a counter or return error for unknown name"""
+        result = self.client.delete('/counters/NULL')
+        self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
+
+        result = self.client.post('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+        base_value = result.get_json()['foofoo']
+        self.assertEqual(base_value, 0)
+
+        for i in range(12):
+            result = self.client.put('/counters/foofoo')
+            self.assertEqual(result.status_code, status.HTTP_200_OK)
+            upd_value = result.get_json()['foofoo']
+            self.assertEqual(base_value + i + 1, upd_value)
+
+        result = self.client.get('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
+        new_value = result.get_json()['foofoo']
+        self.assertEqual(base_value + 12, new_value)
+
+        result = self.client.delete('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_204_NO_CONTENT)
+        result = self.client.put('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
+        result = self.client.get('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
+        result = self.client.delete('/counters/foofoo')
+        self.assertEqual(result.status_code, status.HTTP_404_NOT_FOUND)
